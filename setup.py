@@ -67,9 +67,9 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Site Management',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    # entry_points={
-    #     'console_scripts': [
-    #         'mediasync = mediasync.cli:main',
-    #     ]
-    # }
+    entry_points={
+        'console_scripts': [
+            'mediasync = mediasync.cli:__main__',
+        ]
+    }
 )

@@ -16,17 +16,16 @@ headers = {
 }
 
 
-class Deezer(object):
-    def __init__(self, username, passwd):
+class Core(object):
+    def __init__(self):
         self.r = requests.Session()
         self.r.headers = headers
-        self.login(username, passwd)
 
     def login(self, username, passwd):  # looks like there is official api, so this should be patched not to fake browser
         self.r.headers['X-Requested-With'] = 'XMLHttpRequest'
         data = {'type': 'login',
-                'mail': 'oczkers@gmail.com',
-                'password': 'QtsjxQceetWNh7pzNifP'}
+                'mail': username,
+                'password': passwd}
         rc = self.r.post('https://www.deezer.com//ajax/action.php', data=data).text
         open('deezer.log', 'w').write(rc)
         del self.r.headers['X-Requested-With']
@@ -41,6 +40,9 @@ class Deezer(object):
         open('deezer.log', 'w').write(json.dumps(rc))
         self.user_id = rc['results']['USER']['USER_ID']
         self.api_key = rc['results']['checkForm']
+        print(self.user_id)
+        if self.user_id == 0:
+            asdasdas
 
     def getFavorites(self):
         data = {'user_id': self.user_id,
@@ -65,4 +67,16 @@ class Deezer(object):
                   'cid': random.randint(100000000, 999999999)}
         rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params).json()
         open('deezer.log', 'w').write(json.dumps(rc))
+
+        # data = {'sng_id': song['SNG_ID']}
+        # params = {'input': 3,
+        #           'method': 'deezer.pageTrack',
+        #           'api_version': '1.0',
+        #           'api_token': self.api_key,
+        #           'cid': random.randint(100000000, 999999999)}
+        # rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params).json()
+        # open('deezer.log', 'w').write(json.dumps(rc))
         return rc['results']
+
+    def logout(self):
+        self.r.get('https://www.deezer.com/logout.php')
