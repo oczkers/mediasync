@@ -51,8 +51,18 @@ class Deezer(object):
                   'api_version': '1.0',
                   'api_token': self.api_key,
                   'cid': random.randint(100000000, 999999999)}
-        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params)
-        open('deezer.log', 'wb').write(rc.content)
-        rc = rc.json()
+        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params).json()
+        open('deezer.log', 'w').write(json.dumps(rc))
         songs = rc['results']['TAB']['loved']['data']
         return songs
+
+    def addFavorite(self, song):
+        data = {'SNG_ID': song['SNG_ID']}
+        params = {'input': 3,
+                  'method': 'favorite_song.add',
+                  'api_version': '1.0',
+                  'api_token': self.api_key,
+                  'cid': random.randint(100000000, 999999999)}
+        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params).json()
+        open('deezer.log', 'w').write(json.dumps(rc))
+        return rc['results']
