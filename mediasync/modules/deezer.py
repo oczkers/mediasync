@@ -23,11 +23,26 @@ class Core(object):
 
     def login(self, username, passwd):  # looks like there is official api, so this should be patched not to fake browser
         self.r.headers['X-Requested-With'] = 'XMLHttpRequest'
+        # get checkFormLogin
+        data = {'method': 'deezer.getUserData',
+                'input': 3,
+                'api_version': '1.0',
+                'api_token': '',
+                'cid': random.randint(100000000, 999999999)}
+        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', params=data).json()
+        checkFormLogin = rc['results']['checkFormLogin']
         data = {'type': 'login',
                 'mail': username,
-                'password': passwd}
+                'password': passwd,
+                'checkFormLogin': checkFormLogin}
+        print(data)
         rc = self.r.post('https://www.deezer.com//ajax/action.php', data=data).text
         open('deezer.log', 'w').write(rc)
+        # if rc == 'error':
+        #     print('wrong email or passwd')
+        #     asasads
+        print(passwd)
+        print(rc)
         del self.r.headers['X-Requested-With']
 
         # user data (api key, user_id)
