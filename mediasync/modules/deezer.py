@@ -36,7 +36,7 @@ class Core(object):
                 'password': passwd,
                 'checkFormLogin': checkFormLogin}
         print(data)
-        rc = self.r.post('https://www.deezer.com//ajax/action.php', data=data).text
+        rc = self.r.post('https://www.deezer.com/ajax/action.php', data=data).text
         open('deezer.log', 'w').write(rc)
         # if rc == 'error':
         #     print('wrong email or passwd')
@@ -57,6 +57,7 @@ class Core(object):
         self.api_key = rc['results']['checkForm']
         print(self.user_id)
         if self.user_id == 0:
+            print('wrong login or password')
             asdasdas
 
     def getFavorites(self):
