@@ -1,6 +1,6 @@
 import requests
 import json
-# import re
+import re
 import random
 
 
@@ -21,78 +21,39 @@ class Core(object):
         self.r = requests.Session()
         self.r.headers = headers
 
-    def login(self, username, passwd):  # looks like there is official api, so this should be patched not to fake browser
-        self.r.headers['X-Requested-With'] = 'XMLHttpRequest'
-        # get checkFormLogin
-        data = {'method': 'deezer.getUserData',
-                'input': 3,
-                'api_version': '1.0',
-                'api_token': '',
-                'cid': random.randint(100000000, 999999999)}
-        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', params=data).json()
-        checkFormLogin = rc['results']['checkFormLogin']
-        data = {'type': 'login',
-                'mail': username,
-                'password': passwd,
-                'checkFormLogin': checkFormLogin}
-        print(data)
-        rc = self.r.post('https://www.deezer.com/ajax/action.php', data=data).text
-        open('deezer.log', 'w').write(rc)
-        # if rc == 'error':
-        #     print('wrong email or passwd')
-        #     asasads
-        print(passwd)
-        print(rc)
-        del self.r.headers['X-Requested-With']
-
-        # user data (api key, user_id)
-        data = {'method': 'deezer.getUserData',
-                'input': 3,
-                'api_version': '1.0',
-                'api_token': '',
-                'cid': random.randint(100000000, 999999999)}
-        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=data).json()
-        open('deezer.log', 'w').write(json.dumps(rc))
-        self.user_id = rc['results']['USER']['USER_ID']
-        self.api_key = rc['results']['checkForm']
-        print(self.user_id)
-        if self.user_id == 0:
-            print('wrong login or password')
-            asdasdas
+    def login(self, access_token=None):  # looks like there is official api, so this should be patched not to fake browser
+        if not access_token:
+            params = {'app_id': 341662,
+                      'redirect_uri': 'http://127.0.0.1/auth',
+                      'perms': 'basic_access, email, offline_access, manage_library, manage_community, delete_library, listening_history'}
+            rc = self.r.get('https://connect.deezer.com/oauth/auth.php', params=params)
+            print(rc.url)
+            key = input('open this shit, login and paste key: ')
+            params = {'app_id': 341662,
+                      'secret': 'c9d343d6bb0725b667e7c73e83d28322',
+                      'code': key}
+            rc = self.r.get('https://connect.deezer.com/oauth/access_token.php', params=params).text
+            self.access_token = re.match('access_token=(.+?)&expires=[0-9]+', rc).group(1)
+            print(self.access_token)
+        else:
+            self.access_token = access_token
 
     def getFavorites(self):
-        data = {'user_id': self.user_id,
-                'tab': 'loved',
-                'nb': 2000}  # what is this?
-        params = {'input': 3,
-                  'method': 'deezer.pageProfile',
-                  'api_version': '1.0',
-                  'api_token': self.api_key,
-                  'cid': random.randint(100000000, 999999999)}
-        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params).json()
-        open('deezer.log', 'w').write(json.dumps(rc))
-        songs = rc['results']['TAB']['loved']['data']
-        return songs
+        params = {'access_token': self.access_token}
+        rc = self.r.get('https://api.deezer.com/user/me/tracks', params=params).json()
+        open('mediasync.log', 'w').write(json.dumps(rc))
+        favs = [i['id'] for i in rc['data']]
+        while len(favs) < rc['total']:
+            print('%s/%s' % (len(favs), rc['total']))
+            rc = self.r.get(rc['next']).json()
+            favs.extend([i['id'] for i in rc['data']])
+        return favs
 
-    def addFavorite(self, song):
-        data = {'SNG_ID': song['SNG_ID']}
-        params = {'input': 3,
-                  'method': 'favorite_song.add',
-                  'api_version': '1.0',
-                  'api_token': self.api_key,
-                  'cid': random.randint(100000000, 999999999)}
-        rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params).json()
-        open('deezer.log', 'w').write(json.dumps(rc))
-
-        # data = {'sng_id': song['SNG_ID']}
-        # params = {'input': 3,
-        #           'method': 'deezer.pageTrack',
-        #           'api_version': '1.0',
-        #           'api_token': self.api_key,
-        #           'cid': random.randint(100000000, 999999999)}
-        # rc = self.r.post('https://www.deezer.com/ajax/gw-light.php', data=json.dumps(data), params=params).json()
-        # open('deezer.log', 'w').write(json.dumps(rc))
-        return rc['results']
+    def addFavorite(self, song_id):
+        params = {'access_token': self.access_token,
+                  'track_id': song_id}
+        rc = self.r.post('https://api.deezer.com/user/me/tracks', params=params).text
+        print(rc)
 
     def logout(self):
-        self.r.get('https://www.deezer.com/logout.php')
+        self.access_token = None
