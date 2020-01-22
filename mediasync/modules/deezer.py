@@ -1,7 +1,7 @@
 import requests
 import json
 import re
-import random
+# import random
 
 
 headers = {
@@ -49,10 +49,34 @@ class Core(object):
             favs.extend([i['id'] for i in rc['data']])
         return favs
 
+    def getPlaylist(self, playlist_id):
+        params = {'access_token': self.access_token}  # is it needed here?
+        rc = self.r.get('https://api.deezer.com/playlist/%s/tracks' % playlist_id, params=params).json()
+        open('mediasync.log', 'w').write(json.dumps(rc))
+        tracks = [i['id'] for i in rc['data']]
+        while len(tracks) < rc['total']:
+            print('%s/%s' % (len(tracks), rc['total']))
+            rc = self.r.get(rc['next']).json()
+            tracks.extend([i['id'] for i in rc['data']])
+        return tracks
+
+    def addTrack(self, playlist_id, track_id):  # TODO: playlist should be an object
+        params = {'access_token': self.access_token,
+                  'songs': [track_id]}
+        rc = self.r.post('https://api.deezer.com/playlist/%s/tracks' % playlist_id, params=params).json()
+        open('mediasync.log', 'w').write(json.dumps(rc))
+        return rc
+
     def addFavorite(self, song_id):
         params = {'access_token': self.access_token,
                   'track_id': song_id}
         rc = self.r.post('https://api.deezer.com/user/me/tracks', params=params).text
+        print(rc)
+
+    def deleteFavorite(self, song_id):
+        params = {'access_token': self.access_token,
+                  'track_id': song_id}
+        rc = self.r.delete('https://api.deezer.com/user/me/tracks', params=params).text
         print(rc)
 
     def logout(self):
